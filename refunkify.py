@@ -4,6 +4,7 @@ import pyexiv2
 import os
 import os.path
 import shutil
+import traceback
 
 people = []
 
@@ -24,25 +25,32 @@ date_tags = (
         'Exif.Photo.DateTimeOriginal',
             )
 
+n = 0
+
 for ziom in people:
     for file in os.listdir(ziom):
+        n = n + 1
+        if n % 100 == 0:
+            print "[%d]" % n
         path = os.path.join(ziom, file)
         try:
-            meta = pyexiv2.Image(path)
-            meta.readMetadata()
-            meta_keys = meta.exifKeys()
+            meta = pyexiv2.ImageMetadata(path)
+            meta.read()
+            meta_keys = meta.exif_keys
             date = None
             for tag in date_tags:
-                if meta_keys.has_key(tag):
-                    date = meta[tag].strftime('%Y-%m-%d_%H.%M.%S')
-                    break
+                if tag in meta_keys:
+                    print meta[tag].value
+                    date = meta[tag].value.strftime('%Y-%m-%d_%H.%M.%S')
 
             if not date:
                 mtime = os.stat(path)[8]
                 date = datetime.fromtimestamp(mtime).strftime('%Y-%m-%d_%H.%M.%S') 
                 print '[MTIME!]\t%s\t%s' % (ziom, file)
         except:
-          continue
+            print "EXC!"
+            traceback.print_exc()
+            continue
         if not date:
             print '[NODATE!]\t%s\t%s' % (ziom, file)
             continue
